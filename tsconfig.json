@@ -21,6 +21,7 @@
       "node",
       "chai-bignumber",
       "./gen/truffle-contracts/types",
+      "./types/truffle",
       "@openzeppelin/test-helpers"
     ],
     "baseUrl": ".",

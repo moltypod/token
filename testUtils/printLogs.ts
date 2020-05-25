@@ -1,6 +1,6 @@
 import BN from "bn.js";
 
-export async function printTxLog(prefix:string, tx: Promise<Truffle.TransactionResponse>) {
+export async function printTxLog(prefix:string, tx: Promise<Truffle.TransactionResponse<any>>) {
     const response = await tx;
     const logs = response.logs;
 
