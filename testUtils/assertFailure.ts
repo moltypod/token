@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 
-export async function assertFailure (promise: any) {
+export async function assertFailure (_promise: any) {
   try {
-    await promise;
+    await _promise;
   } catch (error) {
     return error;
   }

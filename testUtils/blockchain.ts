@@ -21,19 +21,19 @@ export class Blockchain {
     }
 
     public async increaseTimeAsync(
-        duration: BN,
+        _duration: BN,
     ): Promise<any> {
-        await this.sendJSONRpcRequestAsync('evm_increaseTime', [duration.toNumber()]);
+        await this.sendJSONRpcRequestAsync('evm_increaseTime', [_duration.toNumber()]);
     }
 
     public async mineBlockAsync(): Promise<any> {
         await this.sendJSONRpcRequestAsync('evm_mine', []);
     }
 
-    public async advanceBlockAsync(n: number): Promise<any> {
+    public async advanceBlockAsync(_n: number): Promise<any> {
         let promiseList: Promise<any>[] = [];
 
-        for(let i=0; i < n; i++) {
+        for(let i=0; i < _n; i++) {
             promiseList.push(this.mineBlockAsync());
         }
 
@@ -41,15 +41,15 @@ export class Blockchain {
     }
 
     private async sendJSONRpcRequestAsync(
-        method: string,
-        params: any[],
+        _method: string,
+        _params: any[],
     ): Promise<any> {
         return promisify(this.web3Provider.send, {
             context: this.web3Provider,
     })({
         jsonrpc: '2.0',
-        method,
-        params,
+        _method,
+        _params,
         id: new Date().getTime(),
     });
     }

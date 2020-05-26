@@ -4,30 +4,46 @@ import { getWeb3 } from './web3Helper';
 const web3: Web3 = getWeb3();
 import BN from 'bn.js';
 
-export function ether(amount: number): BN {
-  const weiString = web3.utils.toWei(amount.toString(), 'ether');
+export function ether(_amount: number): BN {
+  const weiString = web3.utils.toWei(_amount.toString(), 'ether');
   return new BN(weiString);
 }
 
-export function gWei(amount: number): BN {
-  const weiString = web3.utils.toWei(amount.toString(), 'gwei');
+export function gWei(_amount: number): BN {
+  const weiString = web3.utils.toWei(_amount.toString(), 'gwei');
   return new BN(weiString);
 }
 
-export function wei(amount: number): BN {
-  const weiString = web3.utils.toWei(amount.toString(), 'wei');
+export function wei(_amount: number): BN {
+  const weiString = web3.utils.toWei(_amount.toString(), 'wei');
   return new BN(weiString);
 }
 
-export function e18(amount: number): BN {
-  return ether(amount);
+export function weiToEther(_weiAmount: BN | string): string {
+  return web3.utils.fromWei(_weiAmount, "ether");
 }
 
-export function e9(amount: number): BN {
-  return gWei(amount);
+export function e18(_amount: number): BN {
+  return ether(_amount);
 }
 
-export function e1(amount: number): BN {
-  return wei(amount);
+export function e9(_amount: number): BN {
+  return gWei(_amount);
+}
+
+export function e1(_amount: number): BN {
+  return wei(_amount);
+}
+
+export function toE18(_e1Amount: BN | string): string {
+  return weiToEther(_e1Amount);
+}
+
+export function negative(_value: BN): BN {
+  return _value.mul(new BN(-1));
+}
+
+export function positive(_value: BN): BN {
+  return _value;
 }
 

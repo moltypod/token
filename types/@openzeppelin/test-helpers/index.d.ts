@@ -1,8 +1,3 @@
-// Type definitions for @openzeppelin/test-helpers 0.5
-// Project: https://github.com/OpenZeppelin/openzeppelin-test-helpers#readme
-// Definitions by: John Kim <https://github.com/johnplutusds/>
-// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-
 declare module "@openzeppelin/test-helpers" {
 
     import BN from 'bn.js';
@@ -117,7 +112,6 @@ declare module "@openzeppelin/test-helpers" {
 
     namespace balance {
         function current(account: string, unit?: 'wei' | 'ether' | 'gwei'): Promise<BN>;
-
         function tracker(owner: string, unit?: 'wei' | 'ether' | 'gwei'): Promise<Tracker>;
     }
 
@@ -129,7 +123,6 @@ declare module "@openzeppelin/test-helpers" {
         prev: BN;
 
         delta(unit?: 'wei' | 'ether'): Promise<BN>;
-
         get(unit?: 'wei' | 'ether'): Promise<BN>;
     }
 }

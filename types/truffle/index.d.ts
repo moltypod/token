@@ -7,5 +7,6 @@ declare namespace Truffle {
       useGSN?: boolean;
       paymaster?: string;
       forwarder?: string;
+      forceGasPrice?: BN | number | string;
     }
 }

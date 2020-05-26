@@ -5,19 +5,22 @@ pragma experimental ABIEncoderV2;
 import { BasePaymaster } from "@opengsn/gsn/contracts/BasePaymaster.sol";
 import { GSNTypes } from "@opengsn/gsn/contracts/utils/GSNTypes.sol";
 import { GSNToken } from "./GSNToken.sol";
+import { GsnUtils } from "@opengsn/gsn/contracts/utils/GsnUtils.sol";
 
 contract PayTransferToMe is BasePaymaster {
     event RecipientPreCall();
-    event FuncInfo(bytes4 selector, address to, uint amount);
+    event FuncInfo(bytes4 methodSig, bytes4 selector, address to, uint amount);
 
     event RecipientPostCall(bool success, uint actualCharge, bytes32 preRetVal);
 
     GSNToken gsnToken;
-    address me;
+    bytes4 gsnTokenTransferSelector;
+    address public me;
 
     constructor(GSNToken _gsnToken, address _me) public {
         gsnToken = _gsnToken;
         me = _me;
+        gsnTokenTransferSelector = _gsnToken.transfer.selector;
     }
 
     function acceptRelayedCall(
@@ -31,13 +34,24 @@ contract PayTransferToMe is BasePaymaster {
     view
     returns (bytes memory) {
         (relayRequest, approvalData, maxPossibleCharge);
-        /*
-        체크해야 할 것
-        1. RelayRequest.target이 GSNToken contract address 인지?
-        2. RelayRequest.encodedFunction이 transfer 인지? 그리고 to가 자신인지?
-        3. RelayRequest.relayData.
-        */
-        // return relayRequest.encodedFunction;
+
+        require(
+            relayRequest.target == address(gsnToken),
+            "PayTransferToMe.acceptRelayedCall: recipient should be GSNToken"
+        );
+
+        bytes4 methodSig = GsnUtils.getMethodSig(relayRequest.encodedFunction);
+        require(
+            gsnTokenTransferSelector == methodSig,
+            "PayTransferToMe.acceptRelayedCall: method should be transfer"
+        );
+
+        address to = GsnUtils.getAddressParam(relayRequest.encodedFunction, 0);
+        require(
+            me == to,
+            "PayTransferToMe.acceptRelayedCall: Transfer to anyone is not allowed"
+        );
+
         return "";
     }
 
@@ -52,8 +66,6 @@ contract PayTransferToMe is BasePaymaster {
         (context);
         emit RecipientPreCall();
 
-        // (bytes4 selector, address to, uint amount) = abi.decode(context, (bytes4, address, uint));
-        // emit FuncInfo(selector, to, amount);
         return bytes32(uint(123456));
     }
 

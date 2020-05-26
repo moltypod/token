@@ -1,4 +1,4 @@
-import BN from "bn.js";
+import BN, { min } from "bn.js";
 import { ZERO } from './constants';
 
 export type Account = {
@@ -13,30 +13,42 @@ export type Snap = {
 
 export type Snapshot = Snap[];
 
-export async function getSnapshot(accounts: Account[], func: (account: Account) => Promise<any>): Promise<Snapshot> {
-    const promiseList = accounts.map(async account => await func(account));
+export async function getSnapshot(_accounts: Account[], func: (_account: Account) => Promise<any>): Promise<Snapshot> {
+    const promiseList = _accounts.map(async _account => await func(_account));
     const values: any[] = await Promise.all(promiseList);
 
-    return values.map((v:any, i: number) => {
-        return{ account: accounts[i], value: v };
+    return values.map((_v:any, _i: number) => {
+        return{ account: _accounts[_i], value: _v };
     });
 }
 
+export function getValue(_snapshot: Snapshot, accountMatch: (_account: Account) => boolean): any {
+    const ret = _snapshot.filter(function(_value: Snap, _index: number, _array: Snap[]) {
+        return accountMatch(_value.account);
+    });
+
+    if (ret.length > 0) {
+        return ret[0].value;
+    } else {
+        return null;
+    }
+}
+
 export function snapshotDiff(
-    s1: Snapshot,
-    s2: Snapshot,
-    diffFunc: (v1: any, v2: any) => any,
-    diffCheck: (v: any) => boolean
+    _s1: Snapshot,
+    _s2: Snapshot,
+    _diffFunc: (_v1: any, _v2: any) => any,
+    _diffCheck: (_v: any) => boolean
 )
     : Snapshot
 {
-    let results: Snapshot = [];
-    for(let i=0; i < s1.length; i++) {
-        for(let k=0; k < s2.length; k++) {
-            if (s1[i].account.address == s2[k].account.address) {
-                const diff = diffFunc(s1[i].value, s2[i].value);
-                if (diffCheck(diff)) {
-                    results.push({ account: s1[i].account, value: diff });
+    const results: Snapshot = [];
+    for(let i=0; i < _s1.length; i++) {
+        for(let k=0; k < _s2.length; k++) {
+            if (_s1[i].account.address == _s2[k].account.address) {
+                const diff = _diffFunc(_s1[i].value, _s2[i].value);
+                if (_diffCheck(diff)) {
+                    results.push({ account: _s1[i].account, value: diff });
                 }
             }
         }
@@ -44,9 +56,9 @@ export function snapshotDiff(
     return results;
 }
 
-export function map(s: Snapshot, toFunc: (snap: Snap) => Snap): Snapshot {
-    return s.map((snap: Snap) => {
-        return { account: snap.account, value: toFunc(snap.value) };
+export function map(_s: Snapshot, _toFunc: (_snap: Snap) => Snap): Snapshot {
+    return _s.map((_snap: Snap) => {
+        return { account: _snap.account, value: _toFunc(_snap.value) };
     });
 }
 
