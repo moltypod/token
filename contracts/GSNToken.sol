@@ -8,8 +8,12 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import { BaseRelayRecipient } from "@opengsn/gsn/contracts/BaseRelayRecipient.sol";
+import { IKnowForwarderAddress } from "@opengsn/gsn/contracts/interfaces/IKnowForwarderAddress.sol";
 
-contract GSNToken is Ownable, BaseRelayRecipient, ERC20("GSNToken", "GSNT") {
+contract GSNToken is Ownable, BaseRelayRecipient, IKnowForwarderAddress, ERC20("GSNToken", "GSNT") {
+    function versionRecipient() external view override virtual returns (string memory){
+        return "1.0.0";
+    }
 
     event newForwarder(address indexed newForwarder);
 
@@ -34,6 +38,10 @@ contract GSNToken is Ownable, BaseRelayRecipient, ERC20("GSNToken", "GSNT") {
         returns (address payable)
     {
         return BaseRelayRecipient._msgSender();
+    }
+
+    function getTrustedForwarder() public view override returns(address) {
+        return trustedForwarder;
     }
 }
 

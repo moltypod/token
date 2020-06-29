@@ -8,29 +8,33 @@ import { GSNToken } from "./GSNToken.sol";
 import { GsnUtils } from "@opengsn/gsn/contracts/utils/GsnUtils.sol";
 
 contract PayTransferToMe is BasePaymaster {
-    event RecipientPreCall();
-    event FuncInfo(bytes4 methodSig, bytes4 selector, address to, uint amount);
+    function versionPaymaster() external view override virtual returns (string memory){
+        return "1.0.0";
+    }
 
-    event RecipientPostCall(bool success, uint actualCharge, bytes32 preRetVal);
+    event PreRelayed();
+    event PostRelayed(bool success, uint actualCharge, bytes32 preRetVal);
 
     GSNToken gsnToken;
     bytes4 gsnTokenTransferSelector;
     address public me;
+    uint256 minAmount;
 
-    constructor(GSNToken _gsnToken, address _me) public {
+    constructor(GSNToken _gsnToken, address _me, uint256 _minAmount) public {
         gsnToken = _gsnToken;
         me = _me;
         gsnTokenTransferSelector = _gsnToken.transfer.selector;
+        minAmount = _minAmount;
     }
 
     function acceptRelayedCall(
         GSNTypes.RelayRequest calldata relayRequest,
+        bytes calldata signature,
         bytes calldata approvalData,
         uint256 maxPossibleCharge
     )
     external
     override
-    virtual
     view
     returns (bytes memory) {
         (relayRequest, approvalData, maxPossibleCharge);
@@ -51,6 +55,11 @@ contract PayTransferToMe is BasePaymaster {
             me == to,
             "PayTransferToMe.acceptRelayedCall: Transfer to anyone is not allowed"
         );
+        uint256 amount = GsnUtils.getParam(relayRequest.encodedFunction, 1);
+        require(
+            amount >= minAmount,
+            "PayTransferToMe.acceptRelayedCall: transfer amount should bigger than minAmount"
+        );
 
         return "";
     }
@@ -60,13 +69,12 @@ contract PayTransferToMe is BasePaymaster {
     )
     external
     override
-    virtual
     relayHubOnly
     returns (bytes32) {
         (context);
-        emit RecipientPreCall();
+        emit PreRelayed();
 
-        return bytes32(uint(123456));
+        return bytes32(uint(0));
     }
 
     function postRelayedCall(
@@ -78,10 +86,9 @@ contract PayTransferToMe is BasePaymaster {
     )
     external
     override
-    virtual
     relayHubOnly
     {
         (context, gasUseWithoutPost, gasData);
-        emit RecipientPostCall(success, gasUseWithoutPost, preRetVal);
+        emit PostRelayed(success, gasUseWithoutPost, preRetVal);
     }
 }

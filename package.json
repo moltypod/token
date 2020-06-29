@@ -7,10 +7,10 @@
     "test": "test"
   },
   "devDependencies": {
-    "@opengsn/gsn": "^0.9.0",
+    "@opengsn/gsn": "^0.10.0",
     "@openzeppelin/contracts": "^3.0.1",
     "@openzeppelin/test-helpers": "^0.5.5",
-    "@typechain/truffle-v5": "^2.0.1",
+    "@typechain/truffle-v5": "^2.0.2",
     "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.2",
     "@types/mocha": "^7.0.2",
@@ -30,16 +30,18 @@
     "typechain": "^2.0.0",
     "typechain-target-truffle": "^1.0.2",
     "typescript": "^3.9.3",
-    "web3": "^1.2.8"
+    "web3": "^1.2.9"
   },
   "dependencies": {},
   "scripts": {
+    "clean": "rm -Rf build gen",
     "generate": "npx truffle compile && typechain --target 'truffle-v5' './build/contracts/*.json' --outDir gen/truffle-contracts",
     "g": "yarn generate",
     "prepare": "yarn generate",
     "w": "yarn worktest",
     "deploy-gsn": "npx gsn start",
     "test": "./scripts/launch.sh npx truffle test",
+    "totaltest": "yarn clean && yarn generate && yarn test",
     "tsc": "tsc --noEmit"
   },
   "_moduleAliases": {

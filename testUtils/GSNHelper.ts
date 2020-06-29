@@ -15,7 +15,8 @@ import {
     RelayHubInstance,
     PayTransferToMeInstance,
     StakeManagerInstance,
-    TrustedForwarderInstance
+    TrustedForwarderInstance,
+    
 } from '@gen/truffle-contracts';
 
 import { getSnapshot, snapshotDiff, map } from '@testUtils/snapshot';
@@ -30,11 +31,13 @@ const payTransferToMeContract: any = artifacts.require("PayTransferToMe");
 
 const RelayHubAddress = require("../build/gsn/RelayHub.json")["address"];
 const StakeManagerAddress = require("../build/gsn/StakeManager.json")["address"];
+const PaymasterAddress = require("../build/gsn/Paymaster.json")["address"];
 
 const configuration = {
     relayHubAddress: RelayHubAddress,
     stakeManagerAddress: StakeManagerAddress,
-    verbose: false
+    paymasterAddress: PaymasterAddress,
+    verbose: true
 };
 
 const prevProvider = web3.currentProvider;
@@ -48,11 +51,15 @@ forwarderContract.setProvider(relayProvider);
 gsnTokenContract.setProvider(relayProvider);
 payTransferToMeContract.setProvider(relayProvider);
 
+
+const gsnTestEnv = require('@opengsn/gsn/dist/GsnTestEnvironment').default
+
+
 iPaymasterContract.setProvider(relayProvider);
 export class GSNHelper {
     relayHub: RelayHubInstance | null = null;
     stakeManager: StakeManagerInstance | null = null;
-
+    minAmount: BN = new BN(1);
     relayProvider: any;
 
     constructor() {
@@ -64,19 +71,22 @@ export class GSNHelper {
         this.relayHub = await relayHubContract.at(RelayHubAddress);
         this.stakeManager = await stakeManagerContract.at(StakeManagerAddress);
 
-        const forwarder: TrustedForwarderInstance = await this.deployForwarder(_deployer);
+        const newForwarder: TrustedForwarderInstance = await this.deployForwarder(_deployer);
+
+        const gsnInstance = await gsnTestEnv.startGsn('localhost');
+        const defaultforwarder: TrustedForwarderInstance = await forwarderContract.at(gsnInstance.deploymentResult.forwarderAddress);
+
+        // const forwarder = defaultforwarder;
+        const forwarder = newForwarder;
+
         const gsnToken: GsnTokenInstance =
             await this.deployGSNToken(_totalSupply, _deployer, forwarder.address);
 
         const paymaster: PayTransferToMeInstance =
             await payTransferToMeContract.new(
-                gsnToken.address, _payer, {from: _deployer, useGSN: false}
+                gsnToken.address, _payer, this.minAmount, {from: _deployer, useGSN: false}
             );
         await paymaster.setRelayHub(this.getRelayHub().address, { from: _deployer, useGSN: false });
-
-        console.log('gsnToken.address', gsnToken.address);
-        console.log('forwarder.address', forwarder.address);
-        console.log('paymaster.address', paymaster.address);
 
         await this.getRelayHub().depositFor(paymaster.address, {from: _payer, value: e18(1), useGSN: false });
 

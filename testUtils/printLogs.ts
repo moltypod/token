@@ -4,7 +4,7 @@ export async function printTxLog(_prefix:string, _tx: Promise<Truffle.Transactio
     const response = await _tx;
     const logs = response.logs;
 
-    console.log(_prefix + "------------");
+    // console.log(_prefix + "------------");
     for (let i=0; i < logs.length; i++) {
 
         const l = logs[i];
@@ -13,7 +13,7 @@ export async function printTxLog(_prefix:string, _tx: Promise<Truffle.Transactio
             let arg = l.args[k.toString()];
             msg += " " + arg.toString();
         }
-        console.log("[", msg, "]");
+        // console.log("[", msg, "]");
     }
 }
 
@@ -32,7 +32,7 @@ export async function getContractLogs(_contract: any, _eventName: string, _fromB
     for(let i=0; i < eventABI.length; i++) {
         const eAbi = eventABI[i];
         const inputs: any[] = eAbi.inputs;
-        const eventSignature = `${_eventName}(${inputs.map(input => input.type).join(',')})`
+        const eventSignature = `${_eventName}(${inputs.map(input => input.type).join(',')})`;
         const eventTopic = web3.utils.sha3(eventSignature);
 
         for(let i=0; i < logs.length; i++) {
