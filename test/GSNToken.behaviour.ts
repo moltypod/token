@@ -11,8 +11,6 @@ import { e18, e1, negative, positive } from '@testUtils/units';
 import { getContractLogs } from '@testUtils/printLogs';
 
 import { ErrorRange } from '@testUtils/errorRange';
-// import { getHeapSnapshot } from 'v8';
-// import { DEFAULT_MAX_VERSION } from 'tls';
 
 import { getWeb3 } from '@testUtils/web3Helper';
 import Web3 from 'web3';
@@ -77,7 +75,7 @@ let user1: string;
 let user2: string;
 
 export async function initialzeBehaviour(
-    _totalSupply: BN, _deployer: string, _user1: string, _user2: string
+    _totalSupply: BN, _minAmount: BN, _deployer: string, _user1: string, _user2: string
 ) : Promise<[GSNHelper, GsnTokenInstance, TrustedForwarderInstance, PayTransferToMeInstance, IPaymasterInstance]>
 {
     deployer = _deployer;
@@ -85,7 +83,7 @@ export async function initialzeBehaviour(
     user2 = _user2;
 
     gsnHelper = new GSNHelper();
-    [gsnToken, forwarder, payTransferToMe] = await gsnHelper.deployAll(_totalSupply, _user1, _deployer);
+    [gsnToken, forwarder, payTransferToMe] = await gsnHelper.deployAll(_totalSupply, _user1, _deployer, _minAmount);
     relayHub = gsnHelper.getRelayHub();
     defaultPaymaster = await gsnHelper.getDefaultPaymaster();
     await setRelayAddress();

@@ -5,7 +5,12 @@ import BN from 'bn.js';
 import ChaiSetup from '@testUtils/chaiSetup';
 import { getWeb3 } from '@testUtils/web3Helper';
 
-import { GsnTokenInstance, TrustedForwarderInstance, PayTransferToMeInstance, RelayHubInstance, IPaymasterInstance } from '@gen/truffle-contracts';
+import {
+    GsnTokenInstance,
+    TrustedForwarderInstance,
+    PayTransferToMeInstance,
+    IPaymasterInstance
+} from '@gen/truffle-contracts';
 
 import Web3 from 'web3';
 
@@ -16,7 +21,6 @@ import { expectRevert } from '@openzeppelin/test-helpers';
 import { GSNHelper } from '@testUtils/GSNHelper';
 
 const web3: Web3 = getWeb3();
-// const blockchain = new Blockchain(web3.currentProvider);
 
 ChaiSetup.configure();
 
@@ -36,6 +40,7 @@ import {
 
 contract("GSNToken", ([deployer, user1, user2]) => {
     const totalSupply = e18(1000000);
+    const minAmount = e18(0.1);
 
     let gsnHelper: GSNHelper;
 
@@ -44,53 +49,46 @@ contract("GSNToken", ([deployer, user1, user2]) => {
     let payTransferToMe: PayTransferToMeInstance;
     let defaultPaymaster: IPaymasterInstance;
 
-
     before(async () => {
         [gsnHelper, gsnToken, forwarder, payTransferToMe, defaultPaymaster] =
-            await initialzeBehaviour(totalSupply, deployer, user1, user2);
+            await initialzeBehaviour(totalSupply, minAmount, deployer, user1, user2);
     });
 
-    beforeEach(async () => {
-    });
-
-    afterEach(async () => {
-    });
-
-
-    describe("gsn 사용하지 않는 경우, 기존과 같이 동작", async () => {
-        it("transfer 정상동작", async () => {
+    // describe("gsn 사용하지 않는 경우, 기존과 같이 동작", async () => {
+    describe("without GSN, it should work as before", async () => {
+        it("transfer should work as before", async () => {
             await transferWithoutGSN(gsnToken, deployer, user1, e18(10));
         });
 
-        it("approve 정상동작", async () => {
+        it("approve should work as before", async () => {
             await approveWithoutGSN(gsnToken, deployer, user1, e18(10));
         });
 
-        it("transferFrom 정상동작", async () => {
+        it("transferFrom should work as before", async () => {
             await transferFromWithoutGSN(gsnToken, user1, deployer, user2, e18(5), gas.transferFrom.noGSN);
         });
     });
 
-    describe("gsn 사용하는 경우 정상 동작. (default paymaster)", async () => {
-        it("transfer 정상동작", async () => {
+    describe("with GSN and default paymaster, it should work in no gas fee.", async () => {
+        it("transfer should work", async () => {
             await transferWithGSN(gsnToken, deployer, user1, e18(10), defaultPaymaster.address, forwarder.address);
         });
 
-        it("approve 정상동작", async () => {
+        it("approve should work", async () => {
             await approveWithGSN(gsnToken, deployer, user1, e18(10), defaultPaymaster.address, forwarder.address);
         });
 
-        it("transferFrom 정상동작", async () => {
+        it("transferFrom should work", async () => {
             await transferFromWithGSN(gsnToken, user1, deployer, user2, e18(5), defaultPaymaster.address, forwarder.address);
         });
 
-        it("forwarder를 지정하지 않는 경우", async () => {
+        it("undesignated forwarder from the client-side should work.", async () => {
             await transferWithGSN(gsnToken, deployer, user1, e18(1), defaultPaymaster.address, null);
         });
     });
 
-    describe("relayHub 관련 실패 케이스 검증", async () => {
-        it("paymaster가 설정되어 있지 않은 경우", async () => {
+    describe("general error cases", async () => {
+        it("undesignated paymaster from the client-side should NOT work", async () => {
             await expectRevert(transferWithGSN(
                 gsnToken,
                 deployer,
@@ -101,7 +99,7 @@ contract("GSNToken", ([deployer, user1, user2]) => {
             ), "expected null not to be null");
         });
 
-        it("forwarder가 잘못된 주소를 가진 경우", async () => {
+        it("wrong forwarder address from the client-side should NOT work", async () => {
             await expectRevert(transferWithGSN(
                 gsnToken,
                 deployer,
@@ -112,7 +110,7 @@ contract("GSNToken", ([deployer, user1, user2]) => {
             ), "Error: The Forwarder address configured but is not trusted by the Recipient contract");
         });
 
-        it("forwarder가 다른 forwarder 주소를 가진 경우", async () => {
+        it("another forwarder address from the client-side should NOT work", async () => {
             await expectRevert(transferWithGSN(
                 gsnToken,
                 deployer,
@@ -124,46 +122,63 @@ contract("GSNToken", ([deployer, user1, user2]) => {
         });
     });
 
-    describe("PayTransferToMe 검증", async () => {
-        describe("transfer 검증", async () => {
-            async function subject(_gsnToken: GsnTokenInstance, _forwarder: TrustedForwarderInstance, _to: string) {
+    describe("PayTransferToMe test", async () => {
+        describe("transfer test", async () => {
+            async function subject(
+                _gsnToken: GsnTokenInstance,
+                _forwarder: TrustedForwarderInstance,
+                _to: string,
+                amount: BN
+            )
+            {
                 await transferWithGSN(
                     _gsnToken,
                     deployer,
                     _to,
-                    e18(10),
+                    amount,
                     payTransferToMe.address,
                     _forwarder.address
                 );
             }
 
-            it("transfer 정상동작, user1 == PayTransferToMe.me && gsnToken 일 경우", async () => {
-                await subject(gsnToken, forwarder, user1);
+            it("transfer shoudl work, when user1 == PayTransferToMe.me && gsnToken && amount > minAmount", async () => {
+                await subject(gsnToken, forwarder, user1, e18(1));
             });
 
-            it("transfer 실패, user2 != PayTransferToMe.me", async () => {
+            it("transfer should NOT work, when user2 != PayTransferToMe.me", async () => {
                 await expectRevert(
-                    subject(gsnToken, forwarder, user2),
+                    subject(gsnToken, forwarder, user2, e18(1)),
                     "PayTransferToMe.acceptRelayedCall: Transfer to anyone is not allowed"
                 );
             });
 
-            it("transfer 실패, gsnToken이 다를경우", async () => {
+            it("transfer should NOT work, when recipient != gsnToken", async () => {
                 const gsnToken2 = await gsnHelper.deployGSNToken(totalSupply, deployer, forwarder.address);
                 await expectRevert(
-                    subject(gsnToken2, forwarder, user1),
+                    subject(gsnToken2, forwarder, user1, e18(1)),
                     "PayTransferToMe.acceptRelayedCall: recipient should be GSNToken"
+                );
+            });
+
+            it("transfer should NOT work, when amount < minAmount", async () => {
+                await expectRevert(
+                    subject(gsnToken, forwarder, user1, e18(0.01)),
+                    "PayTransferToMe.acceptRelayedCall: transfer amount should bigger than minAmount"
                 );
             });
         });
 
-        describe("transfer외 다른 동작 실패", async () => {
-            it("arrove && transferFrom 실패", async () => {
-                const txData = gsnHelper.getGsnTxData(deployer, gasPrice, payTransferToMe.address, forwarder.address);
+        describe("other operations except transfer should NOT work", async () => {
+            const txData = gsnHelper.getGsnTxData(deployer, gasPrice, payTransferToMe.address, forwarder.address);
+
+            it("arrove should NOT work", async () => {
                 await expectRevert(
                     gsnToken.approve(user2, e18(1), txData),
                     "PayTransferToMe.acceptRelayedCall: method should be transfer"
                 );
+            });
+
+            it("transferFrom should NOT work", async () => {
                 await expectRevert(
                     gsnToken.transferFrom(user1, user2, e18(1), txData),
                     "PayTransferToMe.acceptRelayedCall: method should be transfer"
@@ -171,7 +186,7 @@ contract("GSNToken", ([deployer, user1, user2]) => {
             });
         });
 
-        describe("paymaster balance가 relayHub에 부족한 경우", async () => {
+        describe("paymaster balance in relayHub is not enough, transfer should NOT work", async () => {
             before(async () => {
                 await gsnHelper.withdrawAll(payTransferToMe, deployer);
             });
@@ -180,7 +195,7 @@ contract("GSNToken", ([deployer, user1, user2]) => {
                 await gsnHelper.fundPaymaster(payTransferToMe, e18(1), deployer);
             });
 
-            it("실패", async () => {
+            it("test", async () => {
                 await expectRevert(
                     transferWithGSN(
                         gsnToken,

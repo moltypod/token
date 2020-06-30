@@ -26,10 +26,6 @@ contract GSNToken is Ownable, BaseRelayRecipient, IKnowForwarderAddress, ERC20("
         emit newForwarder(_trustedForwarder);
     }
 
-    function ttt() external {
-
-    }
-
     function _msgSender()
         internal
         override(Context, BaseRelayRecipient)
