@@ -8,7 +8,7 @@ import { getWeb3 } from '@testUtils/web3Helper';
 import {
     GsnTokenInstance,
     TrustedForwarderInstance,
-    PayTransferToMeInstance,
+    Erc20PaymasterInstance,
     IPaymasterInstance
 } from '@gen/truffle-contracts';
 
@@ -46,15 +46,14 @@ contract("GSNToken", ([deployer, user1, user2]) => {
 
     let gsnToken: GsnTokenInstance;
     let forwarder: TrustedForwarderInstance;
-    let payTransferToMe: PayTransferToMeInstance;
+    let erc20Paymaster: Erc20PaymasterInstance;
     let defaultPaymaster: IPaymasterInstance;
 
     before(async () => {
-        [gsnHelper, gsnToken, forwarder, payTransferToMe, defaultPaymaster] =
+        [gsnHelper, gsnToken, forwarder, erc20Paymaster, defaultPaymaster] =
             await initialzeBehaviour(totalSupply, minAmount, deployer, user1, user2);
     });
 
-    // describe("gsn 사용하지 않는 경우, 기존과 같이 동작", async () => {
     describe("without GSN, it should work as before", async () => {
         it("transfer should work as before", async () => {
             await transferWithoutGSN(gsnToken, deployer, user1, e18(10));
@@ -122,7 +121,7 @@ contract("GSNToken", ([deployer, user1, user2]) => {
         });
     });
 
-    describe("PayTransferToMe test", async () => {
+    describe("ERC20Paymaster test", async () => {
         describe("transfer test", async () => {
             async function subject(
                 _gsnToken: GsnTokenInstance,
@@ -136,65 +135,65 @@ contract("GSNToken", ([deployer, user1, user2]) => {
                     deployer,
                     _to,
                     amount,
-                    payTransferToMe.address,
+                    erc20Paymaster.address,
                     _forwarder.address
                 );
             }
 
-            it("transfer shoudl work, when user1 == PayTransferToMe.me && gsnToken && amount > minAmount", async () => {
+            it("transfer shoudl work, when user1 == ERC20Paymaster.target && gsnToken && amount > minAmount", async () => {
                 await subject(gsnToken, forwarder, user1, e18(1));
             });
 
-            it("transfer should NOT work, when user2 != PayTransferToMe.me", async () => {
+            it("transfer should NOT work, when user2 != ERC20Paymaster.target", async () => {
                 await expectRevert(
                     subject(gsnToken, forwarder, user2, e18(1)),
-                    "PayTransferToMe.acceptRelayedCall: Transfer to anyone is not allowed"
+                    "ERC20Paymaster.acceptRelayedCall: Transfer to anyone is not allowed"
                 );
             });
 
-            it("transfer should NOT work, when recipient != gsnToken", async () => {
+            it("transfer should NOT work, when recipient != target", async () => {
                 const gsnToken2 = await gsnHelper.deployGSNToken(totalSupply, deployer, forwarder.address);
                 await expectRevert(
                     subject(gsnToken2, forwarder, user1, e18(1)),
-                    "PayTransferToMe.acceptRelayedCall: recipient should be GSNToken"
+                    "ERC20Paymaster.acceptRelayedCall: recipient should be token"
                 );
             });
 
             it("transfer should NOT work, when amount < minAmount", async () => {
                 await expectRevert(
                     subject(gsnToken, forwarder, user1, e18(0.01)),
-                    "PayTransferToMe.acceptRelayedCall: transfer amount should bigger than minAmount"
+                    "ERC20Paymaster.acceptRelayedCall: transfer amount should bigger than minAmount"
                 );
             });
         });
 
         describe("other operations except transfer should NOT work", async () => {
             it("arrove should NOT work", async () => {
-                const txData = gsnHelper.getGsnTxData(deployer, gasPrice, payTransferToMe.address, forwarder.address);
+                const txData = gsnHelper.getGsnTxData(deployer, gasPrice, erc20Paymaster.address, forwarder.address);
 
                 await expectRevert(
                     gsnToken.approve(user2, e18(1), txData),
-                    "PayTransferToMe.acceptRelayedCall: method should be transfer"
+                    "ERC20Paymaster.acceptRelayedCall: method should be transfer"
                 );
             });
 
             it("transferFrom should NOT work", async () => {
-                const txData = gsnHelper.getGsnTxData(deployer, gasPrice, payTransferToMe.address, forwarder.address);
+                const txData = gsnHelper.getGsnTxData(deployer, gasPrice, erc20Paymaster.address, forwarder.address);
 
                 await expectRevert(
                     gsnToken.transferFrom(user1, user2, e18(1), txData),
-                    "PayTransferToMe.acceptRelayedCall: method should be transfer"
+                    "ERC20Paymaster.acceptRelayedCall: method should be transfer"
                 );
             });
         });
 
         describe("paymaster balance in relayHub is not enough, transfer should NOT work", async () => {
             before(async () => {
-                await gsnHelper.withdrawAll(payTransferToMe, deployer);
+                await gsnHelper.withdrawAll(erc20Paymaster, deployer);
             });
 
             after(async () => {
-                await gsnHelper.fundPaymaster(payTransferToMe, e18(1), deployer);
+                await gsnHelper.fundPaymaster(erc20Paymaster, e18(1), deployer);
             });
 
             it("test", async () => {
@@ -204,7 +203,7 @@ contract("GSNToken", ([deployer, user1, user2]) => {
                         deployer,
                         user1,
                         e18(10),
-                        payTransferToMe.address,
+                        erc20Paymaster.address,
                         forwarder.address
                     ),
                     "Paymaster balance too low"

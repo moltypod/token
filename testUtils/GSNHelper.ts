@@ -10,7 +10,7 @@ import { e18 } from '@testUtils/units';
 
 import {
     RelayHubInstance,
-    PayTransferToMeInstance,
+    Erc20PaymasterInstance,
     StakeManagerInstance,
     TrustedForwarderInstance
 } from '@gen/truffle-contracts';
@@ -21,7 +21,7 @@ const stakeManagerContract: any = truffleContract(require("../build/contracts/St
 const iPaymasterContract: any =  truffleContract(require("../build/contracts/IPaymaster.json"));
 const forwarderContract: any = artifacts.require("TrustedForwarder");
 const gsnTokenContract: any = artifacts.require("GSNToken");
-const payTransferToMeContract: any = artifacts.require("PayTransferToMe");
+const erc20PaymasterContract: any = artifacts.require("ERC20Paymaster");
 
 const RelayHubAddress = require("../build/gsn/RelayHub.json")["address"];
 const StakeManagerAddress = require("../build/gsn/StakeManager.json")["address"];
@@ -43,7 +43,7 @@ stakeManagerContract.setProvider(relayProvider);
 
 forwarderContract.setProvider(relayProvider);
 gsnTokenContract.setProvider(relayProvider);
-payTransferToMeContract.setProvider(relayProvider);
+erc20PaymasterContract.setProvider(relayProvider);
 
 
 const gsnTestEnv = require('@opengsn/gsn/dist/GsnTestEnvironment').default
@@ -59,7 +59,7 @@ export class GSNHelper {
     }
 
     public async deployAll(_totalSupply: BN, _payer: string, _deployer: string, _minAmount: BN)
-        : Promise<[GsnTokenInstance, TrustedForwarderInstance, PayTransferToMeInstance]>
+        : Promise<[GsnTokenInstance, TrustedForwarderInstance, Erc20PaymasterInstance]>
     {
         this.relayHub = await relayHubContract.at(RelayHubAddress);
         this.stakeManager = await stakeManagerContract.at(StakeManagerAddress);
@@ -71,8 +71,8 @@ export class GSNHelper {
         const gsnToken: GsnTokenInstance =
             await this.deployGSNToken(_totalSupply, _deployer, forwarder.address);
 
-        const paymaster: PayTransferToMeInstance =
-            await payTransferToMeContract.new(
+        const paymaster: Erc20PaymasterInstance =
+            await erc20PaymasterContract.new(
                 gsnToken.address, _payer, _minAmount, {from: _deployer, useGSN: false}
             );
         await paymaster.setRelayHub(this.getRelayHub().address, { from: _deployer, useGSN: false });
@@ -111,11 +111,11 @@ export class GSNHelper {
         return this.relayHub!;
     }
 
-    public async fundPaymaster(_paymaster: PayTransferToMeInstance, _amount: BN, _from: string) {
+    public async fundPaymaster(_paymaster: Erc20PaymasterInstance, _amount: BN, _from: string) {
         await this.getRelayHub().depositFor(_paymaster.address, {from: _from, value: _amount, useGSN: false });
     }
 
-    public async withdrawAll(_paymaster: PayTransferToMeInstance, _from: string) {
+    public async withdrawAll(_paymaster: Erc20PaymasterInstance, _from: string) {
         const balance = await this.getRelayHub().balanceOf(_paymaster.address);
         await _paymaster.withdrawRelayHubDepositTo(balance, _from, {from: _from, useGSN: false});
     }

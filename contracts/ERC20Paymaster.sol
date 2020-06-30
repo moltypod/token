@@ -4,7 +4,6 @@ pragma experimental ABIEncoderV2;
 
 import { BasePaymaster } from "@opengsn/gsn/contracts/BasePaymaster.sol";
 import { GSNTypes } from "@opengsn/gsn/contracts/utils/GSNTypes.sol";
-// import { GSNToken } from "./GSNToken.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { GsnUtils } from "@opengsn/gsn/contracts/utils/GsnUtils.sol";
 
