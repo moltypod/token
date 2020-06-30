@@ -15,8 +15,7 @@ import {
     RelayHubInstance,
     PayTransferToMeInstance,
     StakeManagerInstance,
-    TrustedForwarderInstance,
-    
+    TrustedForwarderInstance
 } from '@gen/truffle-contracts';
 
 import { getSnapshot, snapshotDiff, map } from '@testUtils/snapshot';
@@ -37,7 +36,7 @@ const configuration = {
     relayHubAddress: RelayHubAddress,
     stakeManagerAddress: StakeManagerAddress,
     paymasterAddress: PaymasterAddress,
-    verbose: true
+    verbose: false
 };
 
 const prevProvider = web3.currentProvider;
@@ -73,8 +72,8 @@ export class GSNHelper {
 
         const newForwarder: TrustedForwarderInstance = await this.deployForwarder(_deployer);
 
-        const gsnInstance = await gsnTestEnv.startGsn('localhost');
-        const defaultforwarder: TrustedForwarderInstance = await forwarderContract.at(gsnInstance.deploymentResult.forwarderAddress);
+        // const gsnInstance = await gsnTestEnv.startGsn('localhost');
+        // const defaultforwarder: TrustedForwarderInstance = await forwarderContract.at(gsnInstance.deploymentResult.forwarderAddress);
 
         // const forwarder = defaultforwarder;
         const forwarder = newForwarder;
@@ -91,6 +90,11 @@ export class GSNHelper {
         await this.getRelayHub().depositFor(paymaster.address, {from: _payer, value: e18(1), useGSN: false });
 
         return [gsnToken, forwarder, paymaster];
+    }
+
+    public async getDefaultForwarderAddress(): Promise<string> {
+        const gsnInstance = await gsnTestEnv.startGsn('localhost');
+        return gsnInstance.deploymentResult.forwarderAddress;
     }
 
     public async getDefaultPaymaster(): Promise<IPaymasterInstance> {
