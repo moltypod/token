@@ -15,15 +15,13 @@ contract GSNToken is Ownable, BaseRelayRecipient, IKnowForwarderAddress, ERC20("
         return "1.0.0";
     }
 
-    event newForwarder(address indexed newForwarder);
-
-    constructor(uint256 _totalSupply) public {
+    constructor(uint256 _totalSupply, address _trustedForwarder) public {
         _mint(msg.sender, _totalSupply);
+        setTrustedForwarder(_trustedForwarder);
     }
 
-    function setTrustedForwarder(address _trustedForwarder) external onlyOwner {
+    function setTrustedForwarder(address _trustedForwarder) internal {
         trustedForwarder = _trustedForwarder;
-        emit newForwarder(_trustedForwarder);
     }
 
     function _msgSender()

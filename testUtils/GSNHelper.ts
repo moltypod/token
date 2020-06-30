@@ -100,9 +100,7 @@ export class GSNHelper {
 
     public async deployGSNToken(_totalSupply: BN, _deployer: string, _forwarderAddress: string) : Promise<GsnTokenInstance> {
         const gsnToken: GsnTokenInstance =
-            await gsnTokenContract.new(_totalSupply, {from: _deployer, useGSN: false});
-
-        await gsnToken.setTrustedForwarder(_forwarderAddress, {from: _deployer, useGSN: false});
+            await gsnTokenContract.new(_totalSupply, _forwarderAddress, {from: _deployer, useGSN: false});
 
         return gsnToken;
     }
