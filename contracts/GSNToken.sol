@@ -11,13 +11,13 @@ import { BaseRelayRecipient } from "@opengsn/gsn/contracts/BaseRelayRecipient.so
 import { IKnowForwarderAddress } from "@opengsn/gsn/contracts/interfaces/IKnowForwarderAddress.sol";
 
 contract GSNToken is Ownable, BaseRelayRecipient, IKnowForwarderAddress, ERC20("GSNToken", "GSNT") {
-    function versionRecipient() external view override virtual returns (string memory){
-        return "1.0.0";
-    }
-
     constructor(uint256 _totalSupply, address _trustedForwarder) public {
         _mint(msg.sender, _totalSupply);
         setTrustedForwarder(_trustedForwarder);
+    }
+
+    function versionRecipient() external view override virtual returns (string memory){
+        return "1.0.0";
     }
 
     function setTrustedForwarder(address _trustedForwarder) internal {

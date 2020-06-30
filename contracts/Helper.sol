@@ -5,5 +5,5 @@ import "@opengsn/gsn/contracts/RelayHub.sol"; // import needed for artifact gene
 import "@opengsn/gsn/contracts/TrustedForwarder.sol"; // import needed for artifact generation
 import "@opengsn/gsn/contracts/test/TestPaymasterEverythingAccepted.sol";
 contract Helper {
-
+    // solium-disable-previous-line no-empty-blocks
 }

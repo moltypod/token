@@ -147,7 +147,7 @@ contract("GSNToken", ([deployer, user1, user2]) => {
             it("transfer should NOT work, when user2 != ERC20Paymaster.target", async () => {
                 await expectRevert(
                     subject(gsnToken, forwarder, user2, e18(1)),
-                    "ERC20Paymaster.acceptRelayedCall: Transfer to anyone is not allowed"
+                    "ERC20Paymaster.acceptRelayedCall: transfer to anyone is not allowed"
                 );
             });
 
@@ -162,7 +162,7 @@ contract("GSNToken", ([deployer, user1, user2]) => {
             it("transfer should NOT work, when amount < minAmount", async () => {
                 await expectRevert(
                     subject(gsnToken, forwarder, user1, e18(0.01)),
-                    "ERC20Paymaster.acceptRelayedCall: transfer amount should bigger than minAmount"
+                    "ERC20Paymaster.acceptRelayedCall: amount should bigger than minAmount"
                 );
             });
         });

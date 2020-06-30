@@ -8,23 +8,23 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { GsnUtils } from "@opengsn/gsn/contracts/utils/GsnUtils.sol";
 
 contract ERC20Paymaster is BasePaymaster {
-    function versionPaymaster() external view override virtual returns (string memory){
-        return "1.0.0";
-    }
-
-    event PreRelayed();
-    event PostRelayed(bool success, uint actualCharge, bytes32 preRetVal);
-
     IERC20 token;
     bytes4 transferSelector;
     address public target;
     uint256 minAmount;
+
+    event PreRelayed();
+    event PostRelayed(bool success, uint actualCharge, bytes32 preRetVal);
 
     constructor(IERC20 _token, address _target, uint256 _minAmount) public {
         token = _token;
         target = _target;
         transferSelector = token.transfer.selector;
         minAmount = _minAmount;
+    }
+
+    function versionPaymaster() external view override virtual returns (string memory){
+        return "1.0.0";
     }
 
     function acceptRelayedCall(
@@ -53,12 +53,12 @@ contract ERC20Paymaster is BasePaymaster {
         address to = GsnUtils.getAddressParam(relayRequest.encodedFunction, 0);
         require(
             target == to,
-            "ERC20Paymaster.acceptRelayedCall: Transfer to anyone is not allowed"
+            "ERC20Paymaster.acceptRelayedCall: transfer to anyone is not allowed"
         );
         uint256 amount = GsnUtils.getParam(relayRequest.encodedFunction, 1);
         require(
             amount >= minAmount,
-            "ERC20Paymaster.acceptRelayedCall: transfer amount should bigger than minAmount"
+            "ERC20Paymaster.acceptRelayedCall: amount should bigger than minAmount"
         );
 
         return "";

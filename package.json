@@ -1,6 +1,6 @@
 {
   "name": "gsntoken",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "",
   "main": "truffle-config.js",
   "directories": {
@@ -20,6 +20,7 @@
     "chai-as-promised": "^7.1.1",
     "chai-bignumber": "^3.0.0",
     "chai-bn": "^0.2.1",
+    "ethlint": "^1.2.5",
     "ganache-cli": "^6.9.1",
     "module-alias": "^2.2.2",
     "tiny-promisify": "^1.0.0",
@@ -38,10 +39,10 @@
     "generate": "npx truffle compile && typechain --target 'truffle-v5' './build/contracts/*.json' --outDir gen/truffle-contracts",
     "g": "yarn generate",
     "prepare": "yarn generate",
-    "w": "yarn worktest",
     "deploy-gsn": "npx gsn start",
     "test": "./scripts/launch.sh npx truffle test",
-    "totaltest": "yarn clean && yarn generate && yarn test",
+    "totaltest": "yarn clean && yarn generate && yarn lint && yarn test",
+    "lint": "npx solium -d contracts/",
     "tsc": "tsc --noEmit"
   },
   "_moduleAliases": {
