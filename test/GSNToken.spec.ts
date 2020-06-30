@@ -169,9 +169,9 @@ contract("GSNToken", ([deployer, user1, user2]) => {
         });
 
         describe("other operations except transfer should NOT work", async () => {
-            const txData = gsnHelper.getGsnTxData(deployer, gasPrice, payTransferToMe.address, forwarder.address);
-
             it("arrove should NOT work", async () => {
+                const txData = gsnHelper.getGsnTxData(deployer, gasPrice, payTransferToMe.address, forwarder.address);
+
                 await expectRevert(
                     gsnToken.approve(user2, e18(1), txData),
                     "PayTransferToMe.acceptRelayedCall: method should be transfer"
@@ -179,6 +179,8 @@ contract("GSNToken", ([deployer, user1, user2]) => {
             });
 
             it("transferFrom should NOT work", async () => {
+                const txData = gsnHelper.getGsnTxData(deployer, gasPrice, payTransferToMe.address, forwarder.address);
+
                 await expectRevert(
                     gsnToken.transferFrom(user1, user2, e18(1), txData),
                     "PayTransferToMe.acceptRelayedCall: method should be transfer"
