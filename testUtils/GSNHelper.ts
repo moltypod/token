@@ -15,6 +15,9 @@ import {
     TrustedForwarderInstance
 } from '@gen/truffle-contracts';
 
+import { singletons } from '@openzeppelin/test-helpers';
+
+
 const { RelayProvider } = require('@opengsn/gsn');
 const relayHubContract: any = truffleContract(require("../build/contracts/RelayHub.json"));
 const stakeManagerContract: any = truffleContract(require("../build/contracts/StakeManager.json"));
@@ -61,6 +64,8 @@ export class GSNHelper {
     public async deployAll(_totalSupply: BN, _payer: string, _deployer: string, _minAmount: BN)
         : Promise<[GsnTokenInstance, TrustedForwarderInstance, Erc20PaymasterInstance]>
     {
+        await singletons.ERC1820Registry(_deployer);
+
         this.relayHub = await relayHubContract.at(RelayHubAddress);
         this.stakeManager = await stakeManagerContract.at(StakeManagerAddress);
 

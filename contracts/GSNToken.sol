@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.2;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC777 } from "@openzeppelin/contracts/token/ERC777/ERC777.sol";
 import { Context } from "@openzeppelin/contracts/GSN/Context.sol";
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
-
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import { BaseRelayRecipient } from "@opengsn/gsn/contracts/BaseRelayRecipient.sol";
 import { IKnowForwarderAddress } from "@opengsn/gsn/contracts/interfaces/IKnowForwarderAddress.sol";
 
-contract GSNToken is Ownable, BaseRelayRecipient, IKnowForwarderAddress, ERC20("GSNToken", "GSNT") {
-    constructor(uint256 _totalSupply, address _trustedForwarder) public {
-        _mint(msg.sender, _totalSupply);
+contract GSNToken is Context, ERC777, BaseRelayRecipient, IKnowForwarderAddress {
+    constructor(
+        uint256 _totalSupply,
+        address _trustedForwarder
+    )
+        public
+        ERC777("GSNToken", "GSNT", new address[](0))
+    {
+        _mint(msg.sender, _totalSupply, "", "");
         setTrustedForwarder(_trustedForwarder);
     }
 

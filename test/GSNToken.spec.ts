@@ -16,7 +16,7 @@ import Web3 from 'web3';
 
 import { e18 } from '@testUtils/units';
 
-import { expectRevert } from '@openzeppelin/test-helpers';
+import { expectRevert, singletons } from '@openzeppelin/test-helpers';
 
 import { GSNHelper } from '@testUtils/GSNHelper';
 

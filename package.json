@@ -41,7 +41,7 @@
     "prepare": "yarn generate",
     "deploy-gsn": "npx gsn start",
     "test": "./scripts/launch.sh npx truffle test",
-    "totaltest": "yarn clean && yarn generate && yarn lint && yarn test",
+    "totaltest": "yarn clean && yarn lint && yarn generate && yarn test",
     "lint": "npx solium -d contracts/",
     "tsc": "tsc --noEmit"
   },

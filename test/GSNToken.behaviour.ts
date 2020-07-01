@@ -35,9 +35,9 @@ export const gasPrice = 20000000000;
 const defaultPaymasterAdded = 160000;
 const erc20PaymasterAdded = 140000;
 
-const transferGas = 37365;
+const transferGas = 50000;
 const approveGas = 30182;
-const transferFromGas = 47081;
+const transferFromGas = 52000;
 
 import { Account, Snap, getSnapshot, snapshotDiff, Snapshot, getValue } from '@testUtils/snapshot';
 
