@@ -1,4 +1,5 @@
-# ERC20Paymaster
+# TokenPaymaster
+A project that implements paymaster for DApp which uses token such as ERC20 or ERC777 as a currency.
 
 ![CI](https://github.com/bruce-eljovist/ERC20Paymaster/workflows/CI/badge.svg)
 
@@ -7,6 +8,32 @@
 
 ## GSNToken
 Example ERC20 implementaion Using [GSN V2](https://github.com/opengsn/gsn) and [Openzepplien library](https://github.com/OpenZeppelin/openzeppelin-contracts).
+
+
+## ERC20Paymaster
+Paymaster implementation for ERC20. The ERC20Paymaster pays the ether fee only if all of the following are satisfied:
+1. Only for the transfer operation.
+2. Only when transferring to a predetermined address.
+3. Only if the amount you transfer is greater than the specified minAmount.
+
+Although approve operation is expected to have a high demand for meta-transaction, it is difficult to prevent draining all of the balance of the paymaster through abusing. So only the transfer operation is allowed.
+
+So, when using this paymaster, the below two steps might be required.
+1. Transfer to DApp (through ERC20Paymaster)
+2. Notify DApp (through another DApp paymaster)
+
+This rather cumbersome process is solved by using ERC777Paymaster.
+
+
+## ERC777Paymaster
+Paymaster implementation for ERC777. The ERC777Paymaster pays the ether fee only if all of the following are satisfied:
+1. Only for the send operation.
+2. Only when sending it to a predetermined address.
+3. Only if the amount you send is greater than the specified minAmount.
+
+Unlike ERC20, ERC777 call IERC777Recipient.tokensReceived through the send operation, so no two steps are required.
+
+
 
 ## Usage
 GSNToken is designed to be used in multiple DApps as a currency. So each DApp provides its own paymaster to pay the fee in ETH only for transactions transferred to themselves.

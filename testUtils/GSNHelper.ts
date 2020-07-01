@@ -11,12 +11,12 @@ import { e18 } from '@testUtils/units';
 import {
     RelayHubInstance,
     Erc20PaymasterInstance,
+    Erc777PaymasterInstance,
     StakeManagerInstance,
     TrustedForwarderInstance
 } from '@gen/truffle-contracts';
 
 import { singletons } from '@openzeppelin/test-helpers';
-
 
 const { RelayProvider } = require('@opengsn/gsn');
 const relayHubContract: any = truffleContract(require("../build/contracts/RelayHub.json"));
@@ -25,6 +25,7 @@ const iPaymasterContract: any =  truffleContract(require("../build/contracts/IPa
 const forwarderContract: any = artifacts.require("TrustedForwarder");
 const gsnTokenContract: any = artifacts.require("GSNToken");
 const erc20PaymasterContract: any = artifacts.require("ERC20Paymaster");
+const erc777PaymasterContract: any = artifacts.require("ERC777Paymaster");
 
 const RelayHubAddress = require("../build/gsn/RelayHub.json")["address"];
 const StakeManagerAddress = require("../build/gsn/StakeManager.json")["address"];
@@ -47,7 +48,7 @@ stakeManagerContract.setProvider(relayProvider);
 forwarderContract.setProvider(relayProvider);
 gsnTokenContract.setProvider(relayProvider);
 erc20PaymasterContract.setProvider(relayProvider);
-
+erc777PaymasterContract.setProvider(relayProvider);
 
 const gsnTestEnv = require('@opengsn/gsn/dist/GsnTestEnvironment').default
 
@@ -62,7 +63,7 @@ export class GSNHelper {
     }
 
     public async deployAll(_totalSupply: BN, _payer: string, _deployer: string, _minAmount: BN)
-        : Promise<[GsnTokenInstance, TrustedForwarderInstance, Erc20PaymasterInstance]>
+        : Promise<[GsnTokenInstance, TrustedForwarderInstance, Erc20PaymasterInstance, Erc777PaymasterInstance]>
     {
         await singletons.ERC1820Registry(_deployer);
 
@@ -76,15 +77,21 @@ export class GSNHelper {
         const gsnToken: GsnTokenInstance =
             await this.deployGSNToken(_totalSupply, _deployer, forwarder.address);
 
-        const paymaster: Erc20PaymasterInstance =
+        const paymaster20: Erc20PaymasterInstance =
             await erc20PaymasterContract.new(
                 gsnToken.address, _payer, _minAmount, {from: _deployer, useGSN: false}
             );
-        await paymaster.setRelayHub(this.getRelayHub().address, { from: _deployer, useGSN: false });
+        await paymaster20.setRelayHub(this.getRelayHub().address, { from: _deployer, useGSN: false });
 
-        await this.getRelayHub().depositFor(paymaster.address, {from: _payer, value: e18(1), useGSN: false });
+        const paymaster777: Erc777PaymasterInstance =
+            await erc777PaymasterContract.new(
+                gsnToken.address, _payer, _minAmount, {from: _deployer, useGSN: false}
+            );
+        await paymaster777.setRelayHub(this.getRelayHub().address, { from: _deployer, useGSN: false});
 
-        return [gsnToken, forwarder, paymaster];
+        await this.getRelayHub().depositFor(paymaster20.address, {from: _payer, value: e18(1), useGSN: false });
+
+        return [gsnToken, forwarder, paymaster20, paymaster777];
     }
 
     public async getDefaultForwarderAddress(): Promise<string> {
@@ -114,7 +121,7 @@ export class GSNHelper {
         return this.relayHub!;
     }
 
-    public async fundPaymaster(_paymaster: Erc20PaymasterInstance, _amount: BN, _from: string) {
+    public async fundPaymaster(_paymaster: Erc20PaymasterInstance | Erc777PaymasterInstance, _amount: BN, _from: string) {
         await this.getRelayHub().depositFor(_paymaster.address, {from: _from, value: _amount, useGSN: false });
     }
 

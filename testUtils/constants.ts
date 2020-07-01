@@ -8,5 +8,6 @@ export const ONE: BN = new BN(1);
 export const TWO: BN = new BN(2);
 export const ONE_HUNDRED = new BN(100);
 export const ZERO: BN = new BN(0);
+export const NULL_BYTES = web3.utils.utf8ToHex('');
 
 

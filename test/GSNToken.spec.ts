@@ -9,6 +9,7 @@ import {
     GsnTokenInstance,
     TrustedForwarderInstance,
     Erc20PaymasterInstance,
+    Erc777PaymasterInstance,
     IPaymasterInstance
 } from '@gen/truffle-contracts';
 
@@ -30,6 +31,8 @@ import {
     initialzeBehaviour,
     transferWithGSN,
     transferWithoutGSN,
+    sendWithGSN,
+    sendWithoutGSN,
     approveWithGSN,
     approveWithoutGSN,
     transferFromWithGSN,
@@ -47,24 +50,35 @@ contract("GSNToken", ([deployer, user1, user2]) => {
     let gsnToken: GsnTokenInstance;
     let forwarder: TrustedForwarderInstance;
     let erc20Paymaster: Erc20PaymasterInstance;
+    let erc777Paymaster: Erc777PaymasterInstance;
     let defaultPaymaster: IPaymasterInstance;
 
     before(async () => {
-        [gsnHelper, gsnToken, forwarder, erc20Paymaster, defaultPaymaster] =
+        [gsnHelper, gsnToken, forwarder, erc20Paymaster, erc777Paymaster, defaultPaymaster] =
             await initialzeBehaviour(totalSupply, minAmount, deployer, user1, user2);
+        await gsnHelper.fundPaymaster(erc20Paymaster, e18(1), deployer);
+        await gsnHelper.fundPaymaster(erc777Paymaster, e18(1), deployer);
     });
 
     describe("without GSN, it should work as before", async () => {
-        it("transfer should work as before", async () => {
-            await transferWithoutGSN(gsnToken, deployer, user1, e18(10));
+        describe("ERC20", async () => {
+            it("transfer should work as before", async () => {
+                await transferWithoutGSN(gsnToken, deployer, user1, e18(10));
+            });
+
+            it("approve should work as before", async () => {
+                await approveWithoutGSN(gsnToken, deployer, user1, e18(10));
+            });
+
+            it("transferFrom should work as before", async () => {
+                await transferFromWithoutGSN(gsnToken, user1, deployer, user2, e18(5), gas.transferFrom.noGSN);
+            });
         });
 
-        it("approve should work as before", async () => {
-            await approveWithoutGSN(gsnToken, deployer, user1, e18(10));
-        });
-
-        it("transferFrom should work as before", async () => {
-            await transferFromWithoutGSN(gsnToken, user1, deployer, user2, e18(5), gas.transferFrom.noGSN);
+        describe("ERC777", async () => {
+            it("send should work as before", async () => {
+                await sendWithoutGSN(gsnToken, deployer, user1, e18(10));
+            });
         });
     });
 
@@ -140,22 +154,22 @@ contract("GSNToken", ([deployer, user1, user2]) => {
                 );
             }
 
-            it("transfer shoudl work, when user1 == ERC20Paymaster.target && gsnToken && amount > minAmount", async () => {
+            it("transfer should work, when user1 == ERC20Paymaster.tokenReceiver && gsnToken && amount > minAmount", async () => {
                 await subject(gsnToken, forwarder, user1, e18(1));
             });
 
-            it("transfer should NOT work, when user2 != ERC20Paymaster.target", async () => {
+            it("transfer should NOT work, when user2 != ERC20Paymaster.tokenReceiver", async () => {
                 await expectRevert(
                     subject(gsnToken, forwarder, user2, e18(1)),
                     "ERC20Paymaster.acceptRelayedCall: transfer to anyone is not allowed"
                 );
             });
 
-            it("transfer should NOT work, when recipient != target", async () => {
+            it("transfer should NOT work, when RelayRecipient != target", async () => {
                 const gsnToken2 = await gsnHelper.deployGSNToken(totalSupply, deployer, forwarder.address);
                 await expectRevert(
                     subject(gsnToken2, forwarder, user1, e18(1)),
-                    "ERC20Paymaster.acceptRelayedCall: recipient should be token"
+                    "ERC20Paymaster.acceptRelayedCall: RelayRecipient should be token"
                 );
             });
 
@@ -207,6 +221,64 @@ contract("GSNToken", ([deployer, user1, user2]) => {
                         forwarder.address
                     ),
                     "Paymaster balance too low"
+                );
+            });
+        });
+    });
+
+    describe("ERC777Paymaster test", async () => {
+        describe("send test", async () => {
+            async function subject(
+                _gsnToken: GsnTokenInstance,
+                _forwarder: TrustedForwarderInstance,
+                _to: string,
+                amount: BN
+            )
+            {
+                await sendWithGSN(
+                    _gsnToken,
+                    deployer,
+                    _to,
+                    amount,
+                    erc777Paymaster.address,
+                    _forwarder.address
+                );
+            }
+
+            it("send should work, when user1 == ERC777Paymaster.tokenReceiver && gsnToken && amount > minAmount", async () => {
+                await subject(gsnToken, forwarder, user1, e18(1));
+            });
+
+            it("send should NOT work, when user2 != ERC777Paymaster.tokenReceiver", async () => {
+                await expectRevert(
+                    subject(gsnToken, forwarder, user2, e18(1)),
+                    "ERC777Paymaster.acceptRelayedCall: send to anyone is not allowed"
+                );
+            });
+
+            it("send should NOT work, when RelayRecipient != target", async () => {
+                const gsnToken2 = await gsnHelper.deployGSNToken(totalSupply, deployer, forwarder.address);
+                await expectRevert(
+                    subject(gsnToken2, forwarder, user1, e18(1)),
+                    "ERC777Paymaster.acceptRelayedCall: RelayRecipient should be token"
+                );
+            });
+
+            it("send should NOT work, when amount < minAmount", async () => {
+                await expectRevert(
+                    subject(gsnToken, forwarder, user1, e18(0.01)),
+                    "ERC777Paymaster.acceptRelayedCall: amount should bigger than minAmount"
+                );
+            });
+        });
+
+        describe("other operations except send should NOT work", async () => {
+            it("should NOT work", async () => {
+                const txData = gsnHelper.getGsnTxData(deployer, gasPrice, erc777Paymaster.address, forwarder.address);
+
+                await expectRevert(
+                    gsnToken.approve(user2, e18(1), txData),
+                    "ERC777Paymaster.acceptRelayedCall: method should be send"
                 );
             });
         });

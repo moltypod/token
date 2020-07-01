@@ -5,7 +5,7 @@ import * as chai from 'chai';
 import BN from 'bn.js';
 import ChaiSetup from '@testUtils/chaiSetup';
 
-import { ONE, ZERO, ZERO_ADDRESS } from '@testUtils/constants';
+import { ONE, ZERO, ZERO_ADDRESS, NULL_BYTES } from '@testUtils/constants';
 import { e18, e1, negative, positive } from '@testUtils/units';
 
 import { getContractLogs } from '@testUtils/printLogs';
@@ -26,6 +26,7 @@ import {
     GsnTokenInstance,
     TrustedForwarderInstance,
     Erc20PaymasterInstance,
+    Erc777PaymasterInstance,
     RelayHubInstance,
     IPaymasterInstance
 } from '@gen/truffle-contracts';
@@ -34,10 +35,12 @@ export const gasPrice = 20000000000;
 
 const defaultPaymasterAdded = 160000;
 const erc20PaymasterAdded = 140000;
+const erc777PaymasterAdded = 140000;
 
 const transferGas = 50000;
 const approveGas = 30182;
 const transferFromGas = 52000;
+const sendGas = 50000;
 
 import { Account, Snap, getSnapshot, snapshotDiff, Snapshot, getValue } from '@testUtils/snapshot';
 
@@ -56,6 +59,11 @@ export const gas = {
         "noGSN":  new ErrorRange(transferFromGas * gasPrice),
         "DefaultPaymaster": new ErrorRange((transferFromGas + defaultPaymasterAdded) * gasPrice),
         "ERC20Paymaster": new ErrorRange((transferFromGas + erc20PaymasterAdded) * gasPrice)
+    },
+    "send": {
+        "noGSN":  new ErrorRange(sendGas * gasPrice),
+        "DefaultPaymaster": new ErrorRange((sendGas + defaultPaymasterAdded) * gasPrice),
+        "ERC777Paymaster": new ErrorRange((sendGas + erc777PaymasterAdded) * gasPrice)
     }
 }
 
@@ -65,6 +73,7 @@ let relayHub: RelayHubInstance;
 let gsnToken: GsnTokenInstance;
 let forwarder: TrustedForwarderInstance;
 let erc20Paymaster: Erc20PaymasterInstance;
+let erc777Paymaster: Erc777PaymasterInstance;
 let defaultPaymaster: IPaymasterInstance;
 
 let relayManagerAddress: string;
@@ -76,28 +85,27 @@ let user2: string;
 
 export async function initialzeBehaviour(
     _totalSupply: BN, _minAmount: BN, _deployer: string, _user1: string, _user2: string
-) : Promise<[GSNHelper, GsnTokenInstance, TrustedForwarderInstance, Erc20PaymasterInstance, IPaymasterInstance]>
+) : Promise<[GSNHelper, GsnTokenInstance, TrustedForwarderInstance, Erc20PaymasterInstance, Erc777PaymasterInstance, IPaymasterInstance]>
 {
     deployer = _deployer;
     user1 = _user1;
     user2 = _user2;
 
     gsnHelper = new GSNHelper();
-    [gsnToken, forwarder, erc20Paymaster] = await gsnHelper.deployAll(_totalSupply, _user1, _deployer, _minAmount);
+    [gsnToken, forwarder, erc20Paymaster, erc777Paymaster] = await gsnHelper.deployAll(_totalSupply, _user1, _deployer, _minAmount);
     relayHub = gsnHelper.getRelayHub();
     defaultPaymaster = await gsnHelper.getDefaultPaymaster();
     await setRelayAddress();
     await initialOperations();
 
-    defaultPaymaster = await gsnHelper.getDefaultPaymaster();
-
-    return [gsnHelper, gsnToken, forwarder, erc20Paymaster, defaultPaymaster];
+    return [gsnHelper, gsnToken, forwarder, erc20Paymaster, erc777Paymaster, defaultPaymaster];
 }
 
 function getTargetAccounts(): Account[] {
     return [
         { name: "RelayHub", address: relayHub.address },
         { name: "ERC20Paymaster", address: erc20Paymaster.address },
+        { name: "ERC777Paymaster", address: erc777Paymaster.address },
         { name: "DefaultPaymaster", address: defaultPaymaster.address },
         { name: "Forwarder", address: forwarder.address },
         { name: "gsnToken", address: gsnToken.address },
@@ -123,8 +131,6 @@ function genAccountMatch(_name: string) {
     }
     return intAccountMatch;
 }
-
-
 
 async function getEthBalanceSnapshot() {
     return getSnapshot(
@@ -247,7 +253,6 @@ export async function transferWithGSN(
         _paymasterAddress,
         g
     );
-
 }
 
 export async function transferWithoutGSN(
@@ -286,6 +291,64 @@ async function transfer(
         _transferAmount.neg());
     expect(getValue(gsnTokenDiff, genAccountMatch(_to))).to.be.bignumber.equal(
         positive(_transferAmount));
+}
+
+export async function sendWithGSN(
+    _gsnToken: GsnTokenInstance,
+    _from: string,
+    _to: string,
+    _sendAmount: BN,
+    _paymasterAddress: string | null,
+    _forwarderAddress: string | null
+)
+{
+    const txData = gsnHelper.getGsnTxData(_from, gasPrice, _paymasterAddress, _forwarderAddress);
+    const g = gas.send.ERC777Paymaster;
+
+    await gsnEtherDiffCheck(
+        async () => await send(_gsnToken, _from, _to, _sendAmount, txData),
+        _from,
+        _paymasterAddress,
+        g
+    );
+}
+
+export async function sendWithoutGSN(
+    _gsnToken: GsnTokenInstance,
+    _from: string,
+    _to: string,
+    _sendAmount: BN
+)
+{
+    const data = { from: _from, useGSN: false, gasPrice: gasPrice };
+    const tx = send(_gsnToken, _from, _to, _sendAmount, data);
+    await noGSNEtherDiffCheck(
+        async () => await tx,
+        _from,
+        gas.send.noGSN
+    );
+}
+
+async function send(
+    _gsnToken: GsnTokenInstance,
+    _from: string,
+    _to: string,
+    _sendAmount: BN,
+    _data: Truffle.TransactionDetails
+)
+{
+    const beforeGSNToken = await getGSNTokenBalanceSnapshot(_gsnToken);
+
+    await _gsnToken.send(_to, _sendAmount, NULL_BYTES, _data);
+
+    const afterGSNToken = await getGSNTokenBalanceSnapshot(_gsnToken);
+    const gsnTokenDiff = snapshotDiff(beforeGSNToken, afterGSNToken, bnDiff, notZero);
+
+    expect(gsnTokenDiff.length).to.be.equal(2);
+    expect(getValue(gsnTokenDiff, genAccountMatch(_from))).to.be.bignumber.equal(
+        _sendAmount.neg());
+    expect(getValue(gsnTokenDiff, genAccountMatch(_to))).to.be.bignumber.equal(
+        positive(_sendAmount));
 }
 
 export async function approveWithGSN(

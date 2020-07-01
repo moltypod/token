@@ -4,22 +4,22 @@ pragma experimental ABIEncoderV2;
 
 import { BasePaymaster } from "@opengsn/gsn/contracts/BasePaymaster.sol";
 import { GSNTypes } from "@opengsn/gsn/contracts/utils/GSNTypes.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC777 } from "@openzeppelin/contracts/token/ERC777/IERC777.sol";
 import { GsnUtils } from "@opengsn/gsn/contracts/utils/GsnUtils.sol";
 
-contract ERC20Paymaster is BasePaymaster {
-    IERC20 token;
-    bytes4 transferSelector;
+contract ERC777Paymaster is BasePaymaster {
+    IERC777 token;
+    bytes4 sendSelector;
     address public tokenReceiver;
     uint256 minAmount;
 
     event PreRelayed();
     event PostRelayed(bool success, uint actualCharge, bytes32 preRetVal);
 
-    constructor(IERC20 _token, address _tokenReceiver, uint256 _minAmount) public {
+    constructor(IERC777 _token, address _tokenReceiver, uint256 _minAmount) public {
         token = _token;
         tokenReceiver = _tokenReceiver;
-        transferSelector = token.transfer.selector;
+        sendSelector = token.send.selector;
         minAmount = _minAmount;
     }
 
@@ -37,28 +37,29 @@ contract ERC20Paymaster is BasePaymaster {
     override
     view
     returns (bytes memory) {
+        //    function send(address recipient, uint256 amount, bytes calldata data) external;
         (approvalData, maxPossibleCharge);
 
         require(
             relayRequest.target == address(token),
-            "ERC20Paymaster.acceptRelayedCall: RelayRecipient should be token"
+            "ERC777Paymaster.acceptRelayedCall: RelayRecipient should be token"
         );
 
         bytes4 methodSig = GsnUtils.getMethodSig(relayRequest.encodedFunction);
         require(
-            transferSelector == methodSig,
-            "ERC20Paymaster.acceptRelayedCall: method should be transfer"
+            sendSelector == methodSig,
+            "ERC777Paymaster.acceptRelayedCall: method should be send"
         );
 
         address to = GsnUtils.getAddressParam(relayRequest.encodedFunction, 0);
         require(
             tokenReceiver == to,
-            "ERC20Paymaster.acceptRelayedCall: transfer to anyone is not allowed"
+            "ERC777Paymaster.acceptRelayedCall: send to anyone is not allowed"
         );
         uint256 amount = GsnUtils.getParam(relayRequest.encodedFunction, 1);
         require(
             amount >= minAmount,
-            "ERC20Paymaster.acceptRelayedCall: amount should bigger than minAmount"
+            "ERC777Paymaster.acceptRelayedCall: amount should bigger than minAmount"
         );
 
         return "";
