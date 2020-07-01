@@ -3,7 +3,7 @@ A project that implements paymaster for DApp which uses token such as ERC20 or E
 
 ![CI](https://github.com/bruce-eljovist/ERC20Paymaster/workflows/CI/badge.svg)
 
-[GSN V2](https://github.com/opengsn/gsn) paymaster implementation for ERC20.
+[GSN V2](https://github.com/opengsn/gsn) paymaster implementations for ERC20 and ERC777.
 
 
 ## GSNToken

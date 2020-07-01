@@ -1,6 +1,6 @@
 {
-  "name": "gsntoken",
-  "version": "0.1.0",
+  "name": "TokenPaymaster",
+  "version": "0.2.0",
   "description": "",
   "main": "truffle-config.js",
   "directories": {
@@ -50,5 +50,5 @@
     "@gen": "gen"
   },
   "author": "Park Jongseok",
-  "license": "ISC"
+  "license": "MIT"
 }
