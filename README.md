@@ -1,7 +1,7 @@
 # TokenPaymaster
 A project that implements paymaster for DApp which uses token such as ERC20 or ERC777 as a currency.
 
-![CI](https://github.com/bruce-eljovist/ERC20Paymaster/workflows/CI/badge.svg)
+![CI](https://github.com/eljovist/TokenPaymaster/workflows/CI/badge.svg)
 
 [GSN V2](https://github.com/opengsn/gsn) paymaster implementations for ERC20 and ERC777.
 
