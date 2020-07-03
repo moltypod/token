@@ -7,7 +7,7 @@ A project that implements paymaster for DApp which uses token such as ERC20 or E
 
 
 ## GSNToken
-Example ERC20 implementaion Using [GSN V2](https://github.com/opengsn/gsn) and [Openzepplien library](https://github.com/OpenZeppelin/openzeppelin-contracts).
+Example ERC777 implementaion Using [GSN V2](https://github.com/opengsn/gsn) and [Openzepplien library](https://github.com/OpenZeppelin/openzeppelin-contracts).
 
 
 ## ERC20Paymaster
